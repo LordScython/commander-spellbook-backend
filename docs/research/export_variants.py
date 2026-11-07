@@ -30,16 +30,22 @@ if not next_url:
     raise SystemExit(0)
 with data_file.open("a", encoding="utf-8") as f:
     while next_url:
-        for attempt in range(6):
+        for attempt in range(20):
             try:
                 req = urllib.request.Request(next_url, headers={"User-Agent": "Sisay-Combo-Research/0.1", "Accept": "application/json"})
                 with urllib.request.urlopen(req, timeout=45) as response:
                     page = json.load(response)
                 break
             except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
-                if attempt == 5:
+                if attempt == 19:
                     raise
-                time.sleep(min(60, 2 ** attempt * 2))
+                if isinstance(exc, urllib.error.HTTPError) and exc.code == 429:
+                    retry_after = exc.headers.get("Retry-After")
+                    delay = max(90, int(retry_after)) if retry_after and retry_after.isdigit() else min(600, 90 * (attempt + 1))
+                else:
+                    delay = min(120, 2 ** attempt * 2)
+                print(f"Request failed ({exc}); retrying in {delay}s", flush=True)
+                time.sleep(delay)
         results = page.get("results", []) if isinstance(page, dict) else page
         if not isinstance(results, list):
             raise ValueError("Unexpected API response structure")
@@ -51,4 +57,4 @@ with data_file.open("a", encoding="utf-8") as f:
         next_url = urllib.parse.urljoin(base, raw_next) if raw_next else None
         status_file.write_text(json.dumps({"count": count, "next_url": next_url, "complete": next_url is None}, indent=2))
         print("exported", count, "next", bool(next_url), flush=True)
-        time.sleep(0.3)
+        time.sleep(1.5)
