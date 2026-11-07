@@ -11,6 +11,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: research/combo-dataset
+      - name: Restore previous partial export
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 42339817988 --repo "$GITHUB_REPOSITORY" --name spellbook-variants --dir spellbook-export
+          test -s spellbook-export/variants.jsonl
+          test -s spellbook-export/export_status.json
       - name: Export public variant records
         run: python docs/research/export_variants.py
       - name: Upload dataset
