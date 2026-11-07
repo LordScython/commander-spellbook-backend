@@ -9,6 +9,8 @@ jobs:
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: research/combo-dataset
       - name: Export public variant records
         run: python docs/research/export_variants.py
       - name: Upload dataset
