@@ -1,0 +1,20 @@
+name: Export public Commander Spellbook combos
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Export public variant records
+        run: python docs/research/export_variants.py
+      - name: Upload dataset
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spellbook-variants
+          path: spellbook-export/
+          retention-days: 30
